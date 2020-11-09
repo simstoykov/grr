@@ -1,3 +1,8 @@
+// codemirror styles
+@import '~codemirror/lib/codemirror';
+@import '~codemirror/theme/idea';
+@import '~codemirror/addon/hint/show-hint';
+
 .container {
   display: flex;
   flex-direction: column;
@@ -5,4 +10,18 @@
 
 .timeout {
   width: 10em;
+}
+
+.query {
+  margin-bottom: 1.25em;
+}
+
+.CodeMirror {
+  border: 1px solid #eee;
+  height: auto;
+}
+
+.hint {
+  display: flex;
+  justify-content: flex-end;
 }
