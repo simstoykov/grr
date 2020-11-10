@@ -28,7 +28,7 @@ export class OsqueryForm extends FlowArgumentForm<OsqueryArgs> implements OnInit
     ignoreStderrErrors: new FormControl(null),
   });
 
-  @ViewChild('editor') readonly editor!: ElementRef;
+  @ViewChild('editorTarget') readonly editorTarget!: ElementRef;
 
   @Output() readonly formValues$ = this.form.valueChanges.pipe(shareReplay(1));
   @Output() readonly status$ = this.form.statusChanges.pipe(shareReplay(1));
@@ -38,7 +38,7 @@ export class OsqueryForm extends FlowArgumentForm<OsqueryArgs> implements OnInit
   }
 
   ngAfterViewInit(): void {
-    CodeMirror.fromTextArea(this.editor.nativeElement, {
+    CodeMirror.fromTextArea(this.editorTarget.nativeElement, {
       value: '',
       mode: 'text/x-sqlite',
       theme: 'idea',
