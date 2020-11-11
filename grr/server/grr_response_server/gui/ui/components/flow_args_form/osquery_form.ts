@@ -6,7 +6,6 @@ import {FormGroup, FormControl, Validators} from '@angular/forms';
 import {shareReplay} from 'rxjs/operators';
 
 import * as CodeMirror from 'codemirror';
-import 'codemirror/lib/codemirror.css';
 import 'codemirror/mode/sql/sql.js';
 import 'codemirror/addon/hint/show-hint.js';
 import 'codemirror/addon/hint/sql-hint.js';
