@@ -3,7 +3,7 @@
 @import '~codemirror/theme/idea';
 @import '~codemirror/addon/hint/show-hint';
 
-.container {
+.form-container {
   display: flex;
   flex-direction: column;
 }
@@ -14,6 +14,7 @@
 
 .query {
   margin-bottom: 1.25em;
+  height: auto;
 }
 
 .CodeMirror {
@@ -21,7 +22,19 @@
   height: auto;
 }
 
-.hint {
+.autocomplete-hint {
   display: flex;
   justify-content: flex-end;
+}
+
+.info-section {
+  margin-bottom: 2.5em;
+}
+
+.info-section > * {
+  margin-top: 0.5em;
+}
+
+.spaced-out {
+  margin-left: 1em;
 }

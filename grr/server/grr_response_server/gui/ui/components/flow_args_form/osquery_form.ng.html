@@ -1,6 +1,45 @@
-<div [formGroup]="form" class="container">
+<div class="template-form">
+  <mat-form-field>
+    <mat-label>Explore Osquery tables</mat-label>
+    <input type="text" matInput [formControl]="templateTableControl" [matAutocomplete]="auto">
+    <mat-autocomplete #auto="matAutocomplete">
+      <mat-option
+        *ngFor="let table of filteredTables$ | async; trackBy: trackByTableName"
+        [value]="table.name"
+        [matTooltip]="table.description">
+
+        {{table.name}}
+      </mat-option>
+    </mat-autocomplete>
+  </mat-form-field>
+
+  <div class="mat-caption info-section" *ngIf="selectedTemplateTable$ | async as selectedTemplateTable">
+    <div>
+      <strong>Description:</strong> {{selectedTemplateTable.description}}
+    </div>
+    <div>
+      <strong>Columns:</strong>
+      <span class="spaced-out" *ngFor="let column of selectedTemplateTable.columns">
+        {{column.name + (column.required ? '(required)' : '')}}
+      </span>
+    </div>
+    <div>
+      <strong>Platforms:</strong>
+      <span class="spaced-out" *ngFor="let platform of selectedTemplateTable.platforms">
+        {{platform}}
+      </span>
+    </div>
+
+    <button
+      (click)="onSubmit(selectedTemplateTable)"
+      type="button"
+      mat-stroked-button>Overwrite query with this template</button>
+  </div>
+</div>
+
+<div [formGroup]="form" class="form-container">
   <div class="query">
-    <div class="mat-small hint">Press Ctrl+Space for autocompletion</div>
+    <div class="mat-small autocomplete-hint">Press Ctrl+Space for autocompletion</div>
     <textarea #editorTarget formControlName="query"></textarea>
   </div>
 
