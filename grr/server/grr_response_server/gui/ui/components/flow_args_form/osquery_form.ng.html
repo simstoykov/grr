@@ -1,53 +1,57 @@
-<div class="template-form">
-  <mat-form-field>
-    <mat-label>Explore Osquery tables</mat-label>
-    <input type="text" matInput [formControl]="templateTableControl" [matAutocomplete]="auto">
-    <mat-autocomplete #auto="matAutocomplete">
-      <mat-option
-        *ngFor="let table of filteredTables$ | async; trackBy: trackByTableName"
-        [value]="table.name"
-        [matTooltip]="table.description">
-
-        {{table.name}}
-      </mat-option>
-    </mat-autocomplete>
-  </mat-form-field>
-
-  <div class="mat-caption info-section" *ngIf="selectedTemplateTable$ | async as selectedTemplateTable">
-    <div>
-      <strong>Description:</strong> {{selectedTemplateTable.description}}
-    </div>
-    <div>
-      <strong>Columns:</strong>
-      <span class="spaced-out" *ngFor="let column of selectedTemplateTable.columns">
-        {{column.name + (column.required ? '(required)' : '')}}
-      </span>
-    </div>
-    <div>
-      <strong>Platforms:</strong>
-      <span class="spaced-out" *ngFor="let platform of selectedTemplateTable.platforms">
-        {{platform}}
-      </span>
+<div class="main-container">
+  <div [formGroup]="form" class="form-container">
+    <div class="query">
+      <div class="mat-small autocomplete-hint">Press Ctrl+Space for autocompletion</div>
+      <textarea #editorTarget formControlName="query"></textarea>
     </div>
 
-    <button
-      (click)="onSubmit(selectedTemplateTable)"
-      type="button"
-      mat-stroked-button>Overwrite query with this template</button>
-  </div>
-</div>
+    <mat-form-field class="timeout">
+      <mat-label>Timeout</mat-label>
+      <input type="number" matInput placeholder="" formControlName="timeoutMillis">
+      <span matSuffix>ms</span>
+    </mat-form-field>
 
-<div [formGroup]="form" class="form-container">
-  <div class="query">
-    <div class="mat-small autocomplete-hint">Press Ctrl+Space for autocompletion</div>
-    <textarea #editorTarget formControlName="query"></textarea>
+    <mat-checkbox formControlName="ignoreStderrErrors">Ignore stderr errors</mat-checkbox>
   </div>
 
-  <mat-form-field class="timeout">
-    <mat-label>Timeout</mat-label>
-    <input type="number" matInput placeholder="" formControlName="timeoutMillis">
-    <span matSuffix>ms</span>
-  </mat-form-field>
+  <div class="template-container">
+    <mat-form-field>
+      <mat-label>Explore Osquery tables</mat-label>
+      <input type="text" matInput [formControl]="templateTableControl" [matAutocomplete]="auto">
+      <mat-autocomplete #auto="matAutocomplete">
+        <mat-option
+          *ngFor="let table of filteredTables$ | async; trackBy: trackByTableName"
+          [value]="table.name"
+          [matTooltip]="table.description">
 
-  <mat-checkbox formControlName="ignoreStderrErrors">Ignore stderr errors</mat-checkbox>
+          {{table.name}}
+        </mat-option>
+      </mat-autocomplete>
+    </mat-form-field>
+
+    <div class="mat-caption info-section" *ngIf="selectedTemplateTable$ | async as selectedTemplateTable">
+      <div>
+        <strong>Description:</strong> {{selectedTemplateTable.description}}
+      </div>
+      <div>
+        <strong>Columns:</strong>
+        <span class="spaced-out" *ngFor="let column of selectedTemplateTable.columns">
+          {{column.name + (column.required ? '(required)' : '')}}
+        </span>
+      </div>
+      <div>
+        <strong>Platforms:</strong>
+        <span class="spaced-out" *ngFor="let platform of selectedTemplateTable.platforms">
+          {{platform}}
+        </span>
+      </div>
+
+      <button
+        (click)="onSubmit(selectedTemplateTable)"
+        type="button"
+        mat-stroked-button
+        color="primary"
+        class="template-button">Overwrite query with this template</button>
+    </div>
+  </div>
 </div>

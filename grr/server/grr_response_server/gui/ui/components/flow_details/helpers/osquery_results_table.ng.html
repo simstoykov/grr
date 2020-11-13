@@ -12,6 +12,7 @@
         </th>
       </thead>
       <tbody>
+        <!-- TODO(simstoykov): Display a message if no rows available -->
         <tr *ngFor="let row of table.rows; trackBy: trackByIndex">
           <td *ngFor="let cellValue of row.values">
             {{cellValue}}

@@ -53,7 +53,7 @@ export class OsqueryDetails extends Plugin {
       startWith(null),
     ),
     this.displayTable$.pipe(
-      map(table => table.rows?.length),
+      map(table => table.rows?.length), // TODO(simstoykov): If the table has 0 rows, table.rows is undefined
       startWith(null),
     ),
   ]).pipe(

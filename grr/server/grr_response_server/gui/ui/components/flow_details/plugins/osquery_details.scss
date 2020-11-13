@@ -2,7 +2,7 @@
 
 $header-left-padding: 24px;
 
-.in-progress, .error, .show-additional, .error-show-additional {
+.in-progress, .error, .show-additional {
   color: c.mat-color(c.$foreground, text-light);
 
   border-top: 1px solid c.mat-color(c.$foreground, divider-light);
@@ -12,6 +12,10 @@ $header-left-padding: 24px;
   font-weight: 400;
 
   word-break: break-word;
+}
+
+.in-progress, .error {
+  white-space: pre;
 }
 
 .show-additional {

@@ -3,16 +3,15 @@ import {FlowArgumentForm} from '@app/components/flow_args_form/form_interface';
 
 import {OsqueryArgs} from '../../lib/api/api_interfaces';
 import {FormGroup, FormControl, Validators} from '@angular/forms';
-import {shareReplay, startWith, map, filter, debounceTime, tap} from 'rxjs/operators';
+import {shareReplay, startWith, map, debounceTime} from 'rxjs/operators';
 
 import * as CodeMirror from 'codemirror';
-import 'codemirror/mode/sql/sql.js';
 import 'codemirror/addon/hint/show-hint.js';
 import 'codemirror/addon/hint/sql-hint.js';
-import 'codemirror/addon/hint/anyword-hint.js';
 
-import {tables} from './temporary_list_of_osquery_tables';
-import { Observable } from 'rxjs';
+import {Observable} from 'rxjs';
+
+import tables from '../../../static/osquery_tables_reference.json';
 
 const INPUT_DEVOUNCE_TIME_MS = 200;
 
@@ -108,17 +107,17 @@ export class OsqueryForm extends FlowArgumentForm<OsqueryArgs> implements OnInit
   readonly editorTarget!: ElementRef;
   private editor?: CodeMirror.Editor;
 
+  onSubmit(selectedTable: Table): void {
+    const query = constructQueryFromTable(selectedTable);
+    this.editor?.setValue(query);
+  }
+
   ngOnInit() {
     this.form.patchValue(this.defaultFlowArgs);
   }
 
   ngAfterViewInit(): void {
     this.editor = this.initializeEditor();
-  }
-
-  onSubmit(selectedTable: Table): void {
-    const query = constructQueryFromTable(selectedTable);
-    this.editor?.setValue(query);
   }
 
   trackByTableName(_: number, table: Table): string {
@@ -132,6 +131,7 @@ export class OsqueryForm extends FlowArgumentForm<OsqueryArgs> implements OnInit
       theme: 'idea',
       extraKeys: {'Ctrl-Space': 'autocomplete'},
       lineNumbers: true,
+      lineWrapping: true,
     });
 
     editor.on('change', () => {

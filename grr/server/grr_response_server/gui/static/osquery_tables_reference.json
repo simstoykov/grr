@@ -1,4 +1,4 @@
-export const tables = [
+[
   {
     "name":"account_policy_data",
     "description":"Additional OS X user account data from the AccountPolicy section of OpenDirectory.",
@@ -21710,4 +21710,4 @@ export const tables = [
       }
     ]
   }
-];
+]
