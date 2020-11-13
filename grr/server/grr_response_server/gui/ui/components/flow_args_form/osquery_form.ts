@@ -46,22 +46,31 @@ function constructWhereClause(table: Table): string {
   const requiredColumnNames = table.columns
     .filter(column => column.required)
     .map(column => column.name);
-  if (!requiredColumnNames) {
+  if (requiredColumnNames.length === 0) {
     return '';
   }
 
-  const comment = 'TODO: Set required filed as appropriate.'
+  const comment = 'TODO: Set required field as appropriate.'
   const columnConstraints = requiredColumnNames.map(colName => `${colName} LIKE "" -- ${comment}`);
   const whereClauseArgs = columnConstraints.join('\nAND\n\t');
 
   return `WHERE\n\t${whereClauseArgs}`;
 }
 
+function constructLimitClause(): string {
+  const comment = 'TODO: Set value or remove.';
+  return `LIMIT 1 -- ${comment}`;
+}
+
 function constructQueryFromTable(table: Table): string {
   const selectClause = constructSelectClause(table);
   const fromClause = constructFromClause(table);
   const whereClause = constructWhereClause(table);
-  return [selectClause, fromClause, whereClause, ';'].join('\n');
+  const limitClause = constructLimitClause();
+
+  return [selectClause, fromClause, whereClause, limitClause, ';']
+    .filter(clause => clause !== '')
+    .join('\n');
 }
 
 /** Form that configures an Osquery flow. */
