@@ -56,20 +56,25 @@ function constructWhereClause(table: Table): string {
   return `WHERE\n\t${whereClauseArgs}`;
 }
 
-function constructLimitClause(): string {
-  const comment = 'TODO: Set value or remove.';
-  return `LIMIT 1 -- ${comment}`;
-}
-
 function constructQueryFromTable(table: Table): string {
   const selectClause = constructSelectClause(table);
   const fromClause = constructFromClause(table);
   const whereClause = constructWhereClause(table);
-  const limitClause = constructLimitClause();
 
-  return [selectClause, fromClause, whereClause, limitClause, ';']
+  return [selectClause, fromClause, whereClause, ';']
     .filter(clause => clause !== '')
     .join('\n');
+}
+
+function getTablesMatching(keyword: string): ReadonlyArray<Table> {
+  const matchingNames = tables.filter(table => table.name.includes(keyword));
+
+  const notMatchingNamesButColumns = tables.filter(table =>
+    !table.name.includes(keyword) &&
+    table.columns.some(column => column.name === keyword) // TODO: This is different than table name logic. Check.
+  );
+
+  return [...matchingNames, ...notMatchingNamesButColumns];
 }
 
 /** Form that configures an Osquery flow. */
@@ -86,7 +91,7 @@ export class OsqueryForm extends FlowArgumentForm<OsqueryArgs> implements OnInit
   readonly filteredTables$ = this.templateTableControl.valueChanges.pipe(
     debounceTime(INPUT_DEVOUNCE_TIME_MS),
     startWith(''),
-    map(keyword => tables.filter(table => table.name.includes(keyword))),
+    map(keyword => getTablesMatching(keyword)),
   );
 
   readonly selectedTemplateTable$: Observable<Table | undefined> = this.templateTableControl.valueChanges.pipe(
@@ -118,6 +123,10 @@ export class OsqueryForm extends FlowArgumentForm<OsqueryArgs> implements OnInit
 
   ngAfterViewInit(): void {
     this.editor = this.initializeEditor();
+  }
+
+  allColumnsString(table: Table): string {
+    return table.columns.map(column => column.name).join(', ');
   }
 
   trackByTableName(_: number, table: Table): string {

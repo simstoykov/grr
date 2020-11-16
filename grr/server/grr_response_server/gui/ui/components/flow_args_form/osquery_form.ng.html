@@ -23,8 +23,10 @@
           *ngFor="let table of filteredTables$ | async; trackBy: trackByTableName"
           [value]="table.name"
           [matTooltip]="table.description">
-
           {{table.name}}
+          <span class="mat-small">
+            ({{allColumnsString(table)}})
+          </span>
         </mat-option>
       </mat-autocomplete>
     </mat-form-field>
