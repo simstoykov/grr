@@ -71,7 +71,7 @@ function getTablesMatching(keyword: string): ReadonlyArray<Table> {
 
   const notMatchingNamesButColumns = tables.filter(table =>
     !table.name.includes(keyword) &&
-    table.columns.some(column => column.name === keyword) // TODO: This is different than table name logic. Check.
+    table.columns.some(column => column.name.startsWith(keyword)) // TODO: This is different than table name logic. Check.
   );
 
   return [...matchingNames, ...notMatchingNamesButColumns];
