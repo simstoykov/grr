@@ -69,15 +69,6 @@ def _ExtractFileInfo(
       hash_entry=file_finder_result.hash_entry)
 
 
-def _GetColumnsForFileCollection(
-    table: rdf_osquery.OsqueryTable,
-) -> Iterator[str]:
-  FILE_COLLECTION_PREFIX = "GRR_COLLECT_FILES_"
-  for column in table.header.columns:
-    if column.name.startswith(FILE_COLLECTION_PREFIX):
-      yield column.name
-
-
 class OsqueryFlow(flow_base.FlowBase):
   """A flow mixin wrapping the osquery client action."""
 
@@ -100,16 +91,19 @@ class OsqueryFlow(flow_base.FlowBase):
       responses: flow_responses.Responses[rdf_osquery.OsqueryResult],
   ) -> List[str]:
     file_names = []
-    columns_for_collection = None
+    columns_for_collection = self.args.file_collect_columns
+
+    print("////////////////// args:", self.args)
+    print("%%%%%%%%%%%%%%%%% Columns for collection:", columns_for_collection)
+
+    if len(columns_for_collection) == 0:
+      return []
 
     for osquery_result in responses:
-      table = osquery_result.table
-      if columns_for_collection is None:
-        columns_for_collection = list(_GetColumnsForFileCollection(table))
-
       for column in columns_for_collection:
-        file_names.extend(table.Column(column))
+        file_names.extend(osquery_result.table.Column(column))
 
+    print("***************** files for collection:", file_names)
     return file_names
 
   def Start(self):
