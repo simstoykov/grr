@@ -9,10 +9,11 @@ from typing import List
 from typing import cast
 
 from grr_response_core.lib.util import compatibility
+from grr_response_core.lib.rdfvalues import paths as rdf_paths
+from grr_response_core.lib.rdfvalues import client_fs as rdf_client_fs
 from grr_response_core.lib.rdfvalues import osquery as rdf_osquery
-from grr_response_core.lib.rdfvalues import file_finder as rdf_file_finder
 from grr_response_server.rdfvalues import flow_objects as rdf_flow_objects
-from grr_response_server.flows.general import file_finder
+from grr_response_server.flows.general import transfer
 from grr_response_server import flow_base
 from grr_response_server import flow_responses
 from grr_response_server import server_stubs
@@ -20,6 +21,10 @@ from grr_response_server.databases import db
 
 
 TRUNCATED_ROW_COUNT = 10
+
+
+class _ResultNotRelevantError(ValueError):
+  pass
 
 
 def _GetTotalRowCount(
@@ -59,14 +64,18 @@ def _GetTruncatedTable(
 
 def _ExtractFileInfo(
     result: rdf_flow_objects.FlowResult,
-) -> rdf_osquery.OsqueryFileFetched:
-  if not isinstance(result.payload, rdf_file_finder.FileFinderResult):
-    raise NotAFileFinderResultError
+) -> rdf_osquery.OsqueryFileCollectInfo:
+  if not isinstance(result.payload, rdf_client_fs.StatEntry):
+    raise _ResultNotRelevantError
 
-  file_finder_result = result.payload
-  return rdf_osquery.OsqueryFileFetched(
-      stat_entry=file_finder_result.stat_entry,
-      hash_entry=file_finder_result.hash_entry)
+  stat_entry = result.payload
+  return rdf_osquery.OsqueryFileCollectInfo(stat_entry=stat_entry)
+
+
+def _PathSpecFromFileName(file_name: str) -> rdf_paths.PathSpec:
+  return rdf_paths.PathSpec(
+      path=file_name,
+      pathtype=rdf_paths.PathSpec.PathType.OS)
 
 
 class OsqueryFlow(flow_base.FlowBase):
@@ -86,10 +95,10 @@ class OsqueryFlow(flow_base.FlowBase):
     self.state.progress.partial_table = _GetTruncatedTable(responses)
     self.state.progress.total_row_count = _GetTotalRowCount(responses)
 
-  def _GetFilenamesToFetch(
+  def _GetPathSpecsToCollect(
       self,
       responses: flow_responses.Responses[rdf_osquery.OsqueryResult],
-  ) -> List[str]:
+  ) -> List[rdf_paths.PathSpec]:
     file_names = []
     columns_for_collection = self.args.file_collect_columns
 
@@ -104,7 +113,7 @@ class OsqueryFlow(flow_base.FlowBase):
         file_names.extend(osquery_result.table.Column(column))
 
     print("***************** files for collection:", file_names)
-    return file_names
+    return list(map(_PathSpecFromFileName, file_names))
 
   def Start(self):
     super(OsqueryFlow, self).Start()
@@ -127,20 +136,22 @@ class OsqueryFlow(flow_base.FlowBase):
     for response in responses:
       self.SendReply(response)
 
-    # TODO(simstoykov): Set appropriate max_size
-    action = rdf_file_finder.FileFinderAction.Download(max_size=100000000000)
+    # TODO(simstoykov): Perform checks for file count, and maybe modify filesize limit
+    pathspecs = self._GetPathSpecsToCollect(responses)
     self.CallFlow(
-        file_finder.FileFinder.__name__,
-        paths=self._GetFilenamesToFetch(responses),
-        action=action,
-        next_state=compatibility.GetName(self.ProcessFileFinderResults))
+        transfer.MultiGetFile.__name__,
+        pathspecs=pathspecs,
+        next_state=compatibility.GetName(self.ProcessCollectedFiles))
 
-  def ProcessFileFinderResults(
+  def ProcessCollectedFiles(
       self,
-      responses: flow_responses.Responses[rdf_file_finder.FileFinderResult],
+      responses: flow_responses.Responses[rdf_client_fs.StatEntry],
   ) -> None:
-    for file_finder_result in responses:
-      self.SendReply(file_finder_result)
+    if not responses.success:
+      raise flow_base.FlowError(responses.status)
+
+    for result in responses:
+      self.SendReply(result)
 
   def GetFilesArchiveMappings(
       self,
@@ -149,7 +160,7 @@ class OsqueryFlow(flow_base.FlowBase):
     for result in flow_results:
       try:
         osquery_file = _ExtractFileInfo(result)
-      except NotAFileFinderResultError:
+      except _ResultNotRelevantError:
         continue
 
       client_path = db.ClientPath.FromPathSpec(
@@ -159,13 +170,9 @@ class OsqueryFlow(flow_base.FlowBase):
       # TODO(simstoykov): Check whether we should really keep the tree structure
       # TODO(simstoykov): What checks need to be performed on the full_client_path?
       full_client_path = osquery_file.stat_entry.pathspec.path
-      target_path = f"osquery_fetched_files{full_client_path}"
+      target_path = f"osquery_collected_files{full_client_path}"
 
       yield flow_base.ClientPathArchiveMapping(client_path, target_path)
   
   def GetProgress(self) -> rdf_osquery.OsqueryProgress:
     return self.state.progress
-
-
-class NotAFileFinderResultError(ValueError):
-  pass

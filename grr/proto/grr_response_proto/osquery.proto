@@ -52,7 +52,6 @@ message OsqueryProgress {
   optional uint64 total_row_count = 2;
 }
 
-message OsqueryFileFetched {
+message OsqueryFileCollectInfo {
   optional StatEntry stat_entry = 1;
-  optional Hash hash_entry = 2;
 }

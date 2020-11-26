@@ -11,7 +11,6 @@ from typing import Text
 
 from grr_response_core.lib.rdfvalues import structs as rdf_structs
 from grr_response_core.lib.rdfvalues import client_fs as rdf_client_fs
-from grr_response_core.lib.rdfvalues import crypto as rdf_crypto
 from grr_response_proto import osquery_pb2
 
 
@@ -119,8 +118,8 @@ class OsqueryProgress(rdf_structs.RDFProtoStruct):
   rdf_deps = [OsqueryTable]
 
 
-class OsqueryFileFetched(rdf_structs.RDFProtoStruct):
-  """An RDF wrapper class for the `OsqueryFileFetched` proto."""
+class OsqueryFileCollectInfo(rdf_structs.RDFProtoStruct):
+  """An RDF wrapper class for the `OsqueryFileCollectInfo` proto."""
 
-  protobuf = osquery_pb2.OsqueryFileFetched
-  rdf_deps = [rdf_client_fs.StatEntry, rdf_crypto.Hash]
+  protobuf = osquery_pb2.OsqueryFileCollectInfo
+  rdf_deps = [rdf_client_fs.StatEntry]
