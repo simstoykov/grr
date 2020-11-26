@@ -10,6 +10,8 @@ from typing import Sequence
 from typing import Text
 
 from grr_response_core.lib.rdfvalues import structs as rdf_structs
+from grr_response_core.lib.rdfvalues import client_fs as rdf_client_fs
+from grr_response_core.lib.rdfvalues import crypto as rdf_crypto
 from grr_response_proto import osquery_pb2
 
 
@@ -57,7 +59,7 @@ class OsqueryTable(rdf_structs.RDFProtoStruct):
     """Iterates over values of a given column.
 
     Args:
-      column_name: A nome of the column to retrieve the values for.
+      column_name: A name of the column to retrieve the values for.
 
     Yields:
       Values of the specified column.
@@ -115,3 +117,10 @@ class OsqueryProgress(rdf_structs.RDFProtoStruct):
 
   protobuf = osquery_pb2.OsqueryProgress
   rdf_deps = [OsqueryTable]
+
+
+class OsqueryFileFetched(rdf_structs.RDFProtoStruct):
+  """An RDF wrapper class for the `OsqueryFileFetched` proto."""
+
+  protobuf = osquery_pb2.OsqueryFileFetched
+  rdf_deps = [rdf_client_fs.StatEntry, rdf_crypto.Hash]

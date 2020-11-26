@@ -954,6 +954,10 @@ class FlowBase(metaclass=FlowRegistry):
     return self.rdf_flow.client_id
 
   @property
+  def flow_id(self):
+    return self.rdf_flow.flow_id
+
+  @property
   def client_urn(self):
     return rdfvalue.RDFURN(self.client_id)
 

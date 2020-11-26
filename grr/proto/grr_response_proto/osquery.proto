@@ -1,5 +1,8 @@
 syntax = "proto2";
 
+import "grr_response_proto/jobs.proto";
+
+
 package grr;
 
 // https://github.com/facebook/osquery/blob/5188ce5288abe0e323b8e8bd364f452134a62d00/include/osquery/tables.h#L134
@@ -46,4 +49,9 @@ message OsqueryResult {
 message OsqueryProgress {
   optional OsqueryTable partial_table = 1;
   optional uint64 total_row_count = 2;
+}
+
+message OsqueryFileFetched {
+  optional StatEntry stat_entry = 1;
+  optional Hash hash_entry = 2;
 }
