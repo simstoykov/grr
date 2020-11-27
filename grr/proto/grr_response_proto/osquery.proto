@@ -23,6 +23,12 @@ message OsqueryArgs {
   repeated string file_collect_columns = 4;
 }
 
+message OsqueryActionArgs {
+  optional string query = 1;
+  optional uint64 timeout_millis = 2;
+  optional bool ignore_stderr_errors = 3;
+}
+
 message OsqueryColumn {
   optional string name = 1;
   optional OsqueryType type = 2;

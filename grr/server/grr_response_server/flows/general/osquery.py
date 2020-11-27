@@ -23,10 +23,6 @@ from grr_response_server.databases import db
 TRUNCATED_ROW_COUNT = 10
 
 
-class _ResultNotRelevantError(ValueError):
-  pass
-
-
 def _GetTotalRowCount(
     responses: flow_responses.Responses[rdf_osquery.OsqueryResult],) -> int:
   get_row_lengths = lambda response: len(response.table.rows)
@@ -78,6 +74,10 @@ def _PathSpecFromFileName(file_name: str) -> rdf_paths.PathSpec:
       pathtype=rdf_paths.PathSpec.PathType.OS)
 
 
+class _ResultNotRelevantError(ValueError):
+  pass
+
+
 class OsqueryFlow(flow_base.FlowBase):
   """A flow mixin wrapping the osquery client action."""
 
@@ -119,9 +119,14 @@ class OsqueryFlow(flow_base.FlowBase):
     super(OsqueryFlow, self).Start()
     self.state.progress = rdf_osquery.OsqueryProgress()
 
+    action_args = rdf_osquery.OsqueryActionArgs(
+        query=self.args.query,
+        timeout_millis=self.args.timeout_millis,
+        ignore_stderr_errors=self.args.ignore_stderr_errors,
+    )
     self.CallClient(
         server_stubs.Osquery,
-        request=self.args,
+        request=action_args,
         next_state=compatibility.GetName(self.Process))
 
   def Process(

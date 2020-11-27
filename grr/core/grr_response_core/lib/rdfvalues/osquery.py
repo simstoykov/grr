@@ -27,6 +27,13 @@ class OsqueryArgs(rdf_structs.RDFProtoStruct):
       self.timeout_millis = 5 * 60 * 1000  # 5 minutes.
 
 
+class OsqueryActionArgs(rdf_structs.RDFProtoStruct):
+  """An RDF wrapper class for the `OsqueryActionArgs` proto."""
+
+  protobuf = osquery_pb2.OsqueryActionArgs
+  rdf_deps = []
+
+
 class OsqueryColumn(rdf_structs.RDFProtoStruct):
   """An RDF wrapper class for the `OsqueryColumn` proto."""
 
