@@ -18,6 +18,7 @@ import {FallbackFlowArgsForm} from './fallback_flow_args_form';
 import {FlowArgsForm} from './flow_args_form';
 import {OsqueryForm} from './osquery_form';
 import {CodeEditorModule} from '../code_editor/module';
+import {OsqueryQueryHelperModule} from './osquery_query_helper/module';
 
 /** Module for the FlowArgsForm component. */
 @NgModule({
@@ -34,6 +35,7 @@ import {CodeEditorModule} from '../code_editor/module';
     ByteComponentsModule,
     GlobExpressionExplanationModule,
     CodeEditorModule,
+    OsqueryQueryHelperModule,
   ],
   declarations: [
     FlowArgsForm,
