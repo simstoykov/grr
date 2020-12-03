@@ -1,15 +1,15 @@
-.container {
+.main-container {
   display: flex;
   flex-direction: column;
 }
 
 .query-section {
-  margin-bottom: 1.25em;
   height: auto;
 }
 
 .editor-form-field {
   display: block;
+  cursor: text;
 }
 
 .timeout-form-field {

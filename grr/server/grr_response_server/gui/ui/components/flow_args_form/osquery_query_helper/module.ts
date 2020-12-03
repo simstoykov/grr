@@ -7,6 +7,7 @@ import {MatTooltipModule} from '@angular/material/tooltip';
 import {MatInputModule} from '@angular/material/input';
 import {ReactiveFormsModule} from '@angular/forms';
 import {MatFormFieldModule} from '@angular/material/form-field';
+import {MatDialogModule} from '@angular/material/dialog';
 
 import {OsqueryQueryHelper} from './osquery_query_helper';
 import {TableInfoItem} from './table_info_item/table_info_item';
@@ -22,6 +23,7 @@ import {TableInfoItem} from './table_info_item/table_info_item';
     MatTooltipModule,
     MatFormFieldModule,
     MatInputModule,
+    MatDialogModule,
     ReactiveFormsModule,
   ],
   declarations: [

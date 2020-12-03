@@ -1,33 +1,40 @@
-<mat-form-field appearance="outline" class="main-container">
-  <mat-label>Explore Osquery tables</mat-label>
+<mat-dialog-content>
+  <mat-form-field appearance="outline" class="main-container-osquery-helper">
+    <mat-label>Explore Osquery tables</mat-label>
 
-  <input
-    type="text"
-    matInput
-    [formControl]="searchControl"
-    [matAutocomplete]="auto">
+    <input
+      type="text"
+      matInput
+      [formControl]="searchControl"
+      [matAutocomplete]="auto">
 
-  <mat-autocomplete #auto="matAutocomplete" (optionSelected)="tableSelected($event)">
-    <mat-optgroup label="Suggested">
-      <mat-option
-       *ngFor="let tableSpec of suggestedTables$ | async; trackByTableName"
-        class="item-container"
-        [value]="tableSpec.name">
-        <table-info-item
-          [tableSpec]="tableSpec">
-        </table-info-item>
-      </mat-option>
-    </mat-optgroup>
+    <mat-autocomplete #auto="matAutocomplete" (optionSelected)="tableSelected($event)">
+      <mat-optgroup label="Suggested">
+        <mat-option
+        *ngFor="let tableSpec of suggestedTables$ | async; trackByTableName"
+          class="item-container-osquery-helper"
+          [value]="tableSpec.name">
+          <table-info-item
+            [tableSpec]="tableSpec">
+          </table-info-item>
+        </mat-option>
+      </mat-optgroup>
 
-    <mat-optgroup label="All">
-      <mat-option
-       *ngFor="let tableSpec of allTables$ | async; trackByTableName"
-        class="item-container"
-        [value]="tableSpec.name">
-        <table-info-item
-          [tableSpec]="tableSpec">
-        </table-info-item>
-      </mat-option>
-    </mat-optgroup>
-  </mat-autocomplete>
-</mat-form-field>
+      <mat-optgroup label="All">
+        <mat-option
+        *ngFor="let tableSpec of allTables$ | async; trackByTableName"
+          class="item-container-osquery-helper"
+          [value]="tableSpec.name">
+          <table-info-item
+            [tableSpec]="tableSpec">
+          </table-info-item>
+        </mat-option>
+      </mat-optgroup>
+    </mat-autocomplete>
+  </mat-form-field>
+</mat-dialog-content>
+
+<mat-dialog-actions align="end">
+  <button mat-button [mat-dialog-close]="null" color="primary">Cancel</button>
+  <button mat-button [mat-dialog-close]="queryToReturn" color="primary">Select all columns from this table</button>
+</mat-dialog-actions>

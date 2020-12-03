@@ -1,4 +1,4 @@
-import {Component, Output, EventEmitter, ViewChild} from '@angular/core';
+import {Component, Output, EventEmitter, ViewChild, ViewEncapsulation} from '@angular/core';
 import {allTableSpecs, OsqueryTableSpec, OsqueryColumnSpec, nameToTable} from './osquery_table_specs';
 import {debounceTime, startWith, map, filter} from 'rxjs/operators';
 import {isNonNull} from '@app/lib/preconditions';
@@ -73,12 +73,14 @@ export function filterTablesBy(
   selector: 'osquery-query-helper',
   templateUrl: './osquery_query_helper.ng.html',
   styleUrls: ['./osquery_query_helper.scss'],
+
+  // This makes all styles effectively global.
+  encapsulation: ViewEncapsulation.None,
 })
 export class OsqueryQueryHelper {
   private static readonly INPUT_DEVOUNCE_TIME_MS = 200;
 
-  @Output()
-  overwriteWithQuery: EventEmitter<string> = new EventEmitter();
+  queryToReturn?: string;
 
   readonly searchControl = new FormControl('');
 
@@ -97,15 +99,15 @@ export class OsqueryQueryHelper {
     map(keyword => filterTablesBy(allTableSpecs, keyword)),
   );
 
-  trackByTableName(_: number, table: OsqueryTableSpec): string {
+  trackByTableName(_index: number, table: OsqueryTableSpec): string {
     return table.name;
   }
 
   tableSelected(event: MatAutocompleteSelectedEvent): void {
     const tableName = event.option.value;
     const table = nameToTable(tableName);
-    const query = QueryComposer.constructSelectAllFromTable(table);
 
-    this.overwriteWithQuery?.emit(query);
+    this.queryToReturn = QueryComposer.constructSelectAllFromTable(table);
+    console.log(`Set query to return to: ${this.queryToReturn}`);
   }
 }

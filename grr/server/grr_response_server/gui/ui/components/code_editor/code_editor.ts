@@ -29,7 +29,7 @@ type OnChangeFn = (textValue: string) => void;
 class CodeEditorCore implements AfterViewInit {
   @ViewChild('editorTarget')
   private readonly editorTarget!: ElementRef;
-  private editor?: CodeMirror.Editor;
+  protected editor?: CodeMirror.Editor;
 
   private latestOverwrite = '';
   @Input()
@@ -95,6 +95,7 @@ class EditorWithCva extends CodeEditorCore implements ControlValueAccessor {
 class EditorWithCvaAndMffc extends EditorWithCva
     implements MatFormFieldControl<string>, OnDestroy {
   private static uniqueNumber = 0;
+
   private readonly unsubscribe$ = new Subject<void>();
 
   readonly controlType = 'code-editor';
@@ -128,7 +129,9 @@ class EditorWithCvaAndMffc extends EditorWithCva
   ngControl: NgControl | null = null;
   errorState: boolean = false;
   setDescribedByIds(ids: string[]): void { }
-  onContainerClick(event: MouseEvent): void { }
+  onContainerClick(event: MouseEvent): void {
+    this.editor?.focus();
+  }
 
   constructor(
       protected focusMonitor: FocusMonitor,
