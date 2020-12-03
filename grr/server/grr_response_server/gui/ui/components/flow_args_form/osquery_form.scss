@@ -3,11 +3,15 @@
   flex-direction: column;
 }
 
-.query {
+.query-section {
   margin-bottom: 1.25em;
   height: auto;
 }
 
-.timeout {
+.editor-form-field {
+  display: block;
+}
+
+.timeout-form-field {
   width: 10em;
 }

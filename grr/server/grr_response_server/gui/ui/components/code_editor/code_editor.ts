@@ -7,10 +7,17 @@ import {
     ViewEncapsulation,
     Input,
     forwardRef,
+    OnDestroy,
+    HostBinding,
 } from '@angular/core';
-import { NG_VALUE_ACCESSOR, ControlValueAccessor } from '@angular/forms';
+import { NG_VALUE_ACCESSOR, ControlValueAccessor, NgControl } from '@angular/forms';
+import {MatFormFieldControl} from '@angular/material/form-field';
+import {Subject} from 'rxjs';
+import {FocusMonitor} from '@angular/cdk/a11y';
+import {takeUntil} from 'rxjs/operators';
+import {isNonNull} from '@app/lib/preconditions';
 
-import * as CodeMirror from 'codemirror';
+import CodeMirror from 'codemirror';
 // importing sql-hint is needed for SQL syntax highlighting
 import 'codemirror/addon/hint/sql-hint.js';
 // importing show-hint is needed for the autocomplete pop-up
@@ -18,22 +25,8 @@ import 'codemirror/addon/hint/show-hint.js';
 
 type OnChangeFn = (textValue: string) => void;
 
-/** Displays a code editor. */
-@Component({
-  selector: 'code-editor',
-  templateUrl: './code_editor.ng.html',
-  styleUrls: ['./code_editor.scss'],
-  changeDetection: ChangeDetectionStrategy.OnPush,
-  encapsulation: ViewEncapsulation.None,
-  providers: [
-    {
-      provide: NG_VALUE_ACCESSOR,
-      useExisting: forwardRef(() => CodeEditor),
-      multi: true,
-    },
-  ],
-})
-export class CodeEditor implements AfterViewInit, ControlValueAccessor {
+/** The core functionality of the code editor */
+class CodeEditorCore implements AfterViewInit {
   @ViewChild('editorTarget')
   private readonly editorTarget!: ElementRef;
   private editor?: CodeMirror.Editor;
@@ -50,16 +43,9 @@ export class CodeEditor implements AfterViewInit, ControlValueAccessor {
   get editorValue() {
     return this.editor?.getValue() ?? '';
   }
+  protected readonly editorValueChanges$ = new Subject<string>();
 
-  // ControlValueAccessor functionality for Angular Forms interoperability
-  announceValueChanged: OnChangeFn = () => { };
-  writeValue(value: string): void {
-    this.editorValue = value;
-  }
-  registerOnChange(fn: OnChangeFn): void {
-    this.announceValueChanged = fn;
-  }
-  registerOnTouched(): void { }
+  protected announceValueChanged: OnChangeFn = () => { };
 
   ngAfterViewInit(): void {
     this.initializeEditor();
@@ -74,7 +60,7 @@ export class CodeEditor implements AfterViewInit, ControlValueAccessor {
     this.editor = CodeMirror.fromTextArea(this.editorTarget.nativeElement, {
       value: '',
       mode: 'text/x-sqlite',
-      theme: 'idea',
+      theme: 'neo',
       extraKeys: {'Ctrl-Space': 'autocomplete'},
       lineNumbers: true,
       lineWrapping: true,
@@ -82,6 +68,123 @@ export class CodeEditor implements AfterViewInit, ControlValueAccessor {
 
     this.editor.on('change', () => {
       this.announceValueChanged(this.editorValue);
+      this.editorValueChanges$.next(this.editorValue);
     });
+  }
+}
+
+/**
+ * Extends the core editor with ControlValueAccessor functoinality.
+ * This allows the code editor to be used as a Angular form field.
+ */
+class EditorWithCva extends CodeEditorCore implements ControlValueAccessor {
+  writeValue(value: string): void {
+    this.editorValue = value;
+  }
+  registerOnChange(fn: OnChangeFn): void {
+    this.announceValueChanged = fn;
+  }
+  registerOnTouched(): void { }
+}
+
+/**
+ * Extends the editor with MatFormFieldControl functionality.
+ * This allows the editor to be used inside <mat-form-field></mat-form-field>
+ * tags.
+ */
+class EditorWithCvaAndMffc extends EditorWithCva
+    implements MatFormFieldControl<string>, OnDestroy {
+  private static uniqueNumber = 0;
+  private readonly unsubscribe$ = new Subject<void>();
+
+  readonly controlType = 'code-editor';
+
+  @HostBinding()
+  get id(): string {
+    const uniqueId = `${this.controlType}-${EditorWithCvaAndMffc.uniqueNumber}`;
+    EditorWithCvaAndMffc.uniqueNumber += 1;
+    return uniqueId;
+  }
+
+  readonly stateChanges = new Subject<void>();
+  focused = false;
+
+  get value(): string {
+    return this.editorValue;
+  }
+  set value(newValue: string) {
+    this.editorValue = newValue;
+  }
+
+  get empty(): boolean {
+    return this.editorValue === '';
+  }
+
+  shouldLabelFloat = true;
+  required = false;
+  disabled = false;
+
+  placeholder = '';
+  ngControl: NgControl | null = null;
+  errorState: boolean = false;
+  setDescribedByIds(ids: string[]): void { }
+  onContainerClick(event: MouseEvent): void { }
+
+  constructor(
+      protected focusMonitor: FocusMonitor,
+      protected rootElement: ElementRef<HTMLElement>,
+  ) {
+    super();
+    focusMonitor.monitor(rootElement.nativeElement, true).subscribe(
+        focused => {
+          this.focused = isNonNull(focused);
+          this.stateChanges.next();
+        });
+
+    this.editorValueChanges$.pipe(
+        takeUntil(this.unsubscribe$)
+      ).subscribe(() => {
+        this.stateChanges.next();
+      })
+  }
+
+  ngOnDestroy(): void {
+    this.focusMonitor.stopMonitoring(this.rootElement.nativeElement);
+
+    this.unsubscribe$.next();
+    this.unsubscribe$.complete();
+  }
+}
+
+/**
+ * Displays a code editor.
+ * It can be used as an Angular form field, and it can be put inside
+ * <mat-form-field></mat-form-field> tags.
+ */
+@Component({
+  selector: 'code-editor',
+  templateUrl: './code_editor.ng.html',
+  styleUrls: ['./code_editor.scss'],
+  changeDetection: ChangeDetectionStrategy.OnPush,
+  encapsulation: ViewEncapsulation.None,
+  providers: [
+    {
+      provide: NG_VALUE_ACCESSOR,
+      useExisting: forwardRef(() => CodeEditor),
+      multi: true,
+    },
+    {
+      provide: MatFormFieldControl,
+      useExisting: CodeEditor,
+      multi: true,
+    }
+  ],
+})
+export class CodeEditor extends EditorWithCvaAndMffc { 
+  constructor(
+    protected focusMonitor: FocusMonitor,
+    protected rootElement: ElementRef<HTMLElement>,
+) {
+    super(focusMonitor, rootElement);
   }
 }

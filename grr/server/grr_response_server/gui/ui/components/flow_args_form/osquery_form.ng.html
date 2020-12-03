@@ -1,10 +1,14 @@
 <div [formGroup]="form" class="container">
-  <div class="query">
-    <code-editor formControlName="query"></code-editor>
-  </div>
-  <osquery-query-helper></osquery-query-helper>
+  <div class="query-section">
+    <osquery-query-helper (overwriteWithQuery)="overwriteQuery($event)"></osquery-query-helper>
 
-  <mat-form-field class="timeout">
+    <mat-form-field appearance="outline" class="editor-form-field">
+      <mat-label>SQL query</mat-label>
+      <code-editor formControlName="query"></code-editor>
+    </mat-form-field>
+  </div>
+
+  <mat-form-field class="timeout-form-field">
     <mat-label>Timeout</mat-label>
     <input type="number" matInput placeholder="" formControlName="timeoutMillis">
     <span matSuffix>ms</span>

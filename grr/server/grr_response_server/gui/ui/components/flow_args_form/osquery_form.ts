@@ -1,4 +1,4 @@
-import {ChangeDetectionStrategy, Component, OnInit, Output} from '@angular/core';
+import {ChangeDetectionStrategy, Component, OnInit, Output, ViewChild, ElementRef} from '@angular/core';
 import {FormControl, FormGroup, Validators} from '@angular/forms';
 import {FlowArgumentForm} from '@app/components/flow_args_form/form_interface';
 import {shareReplay} from 'rxjs/operators';
@@ -28,5 +28,11 @@ export class OsqueryForm extends FlowArgumentForm<OsqueryArgs> implements
 
   ngOnInit(): void {
     this.form.patchValue(this.defaultFlowArgs);
+  }
+
+  overwriteQuery(newValue: string): void {
+    this.form.patchValue({
+      query: newValue,
+    });
   }
 }
