@@ -1,5 +1,9 @@
-import {Component} from '@angular/core';
+import {Component, Output, EventEmitter, ViewChild} from '@angular/core';
 import {allTableSpecs, OsqueryTableSpec, OsqueryColumnSpec, nameToTable} from './osquery_table_specs';
+import {debounceTime, startWith, map, filter} from 'rxjs/operators';
+import {isNonNull} from '@app/lib/preconditions';
+import {FormControl} from '@angular/forms';
+import {MatAutocompleteSelectedEvent} from '@angular/material/autocomplete';
 
 /** Provides functionality for composing SQL queries from Osquery table spces */
 export class QueryComposer {
@@ -55,9 +59,10 @@ function tableMatchesSearch(
 
 /** Returns a list of tables matching the supplied search criteria. */
 export function filterTablesBy(
-    keyword: string
+    tableSpecs: ReadonlyArray<OsqueryTableSpec>,
+    keyword: string,
 ): ReadonlyArray<OsqueryTableSpec> {
-  return allTableSpecs.filter(table =>
+  return tableSpecs.filter(table =>
       tableMatchesSearch(table, keyword) ||
       table.columns.some(column => columnMatchesSearch(column, keyword)));
 }
@@ -70,6 +75,37 @@ export function filterTablesBy(
   styleUrls: ['./osquery_query_helper.scss'],
 })
 export class OsqueryQueryHelper {
-  readonly names = allTableSpecs.map(tableSpec => tableSpec.name);
-  readonly query = QueryComposer.constructSelectAllFromTable(nameToTable('users'));
+  private static readonly INPUT_DEVOUNCE_TIME_MS = 200;
+
+  @Output()
+  overwriteWithQuery: EventEmitter<string> = new EventEmitter();
+
+  readonly searchControl = new FormControl('');
+
+  private readonly suggestedTablesList = ['users', 'file'].map(nameToTable);
+  readonly suggestedTables$ = this.searchControl.valueChanges.pipe(
+    filter(isNonNull),
+    debounceTime(OsqueryQueryHelper.INPUT_DEVOUNCE_TIME_MS),
+    startWith(''),
+    map(keyword => filterTablesBy(this.suggestedTablesList, keyword)),
+  );
+
+  readonly allTables$ = this.searchControl.valueChanges.pipe(
+    filter(isNonNull),
+    debounceTime(OsqueryQueryHelper.INPUT_DEVOUNCE_TIME_MS),
+    startWith(''),
+    map(keyword => filterTablesBy(allTableSpecs, keyword)),
+  );
+
+  trackByTableName(_: number, table: OsqueryTableSpec): string {
+    return table.name;
+  }
+
+  tableSelected(event: MatAutocompleteSelectedEvent): void {
+    const tableName = event.option.value;
+    const table = nameToTable(tableName);
+    const query = QueryComposer.constructSelectAllFromTable(table);
+
+    this.overwriteWithQuery?.emit(query);
+  }
 }

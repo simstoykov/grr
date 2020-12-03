@@ -3,8 +3,13 @@ import {NgModule} from '@angular/core';
 import {RouterModule} from '@angular/router';
 import {MatButtonModule} from '@angular/material/button';
 import {MatAutocompleteModule} from '@angular/material/autocomplete';
+import {MatTooltipModule} from '@angular/material/tooltip';
+import {MatInputModule} from '@angular/material/input';
+import {ReactiveFormsModule} from '@angular/forms';
+import {MatFormFieldModule} from '@angular/material/form-field';
 
 import {OsqueryQueryHelper} from './osquery_query_helper';
+import {TableInfoItem} from './table_info_item/table_info_item';
 
 
 /** Module for the OsqueryQueryHelper component. */
@@ -14,9 +19,14 @@ import {OsqueryQueryHelper} from './osquery_query_helper';
     CommonModule,
     MatButtonModule,
     MatAutocompleteModule,
+    MatTooltipModule,
+    MatFormFieldModule,
+    MatInputModule,
+    ReactiveFormsModule,
   ],
   declarations: [
     OsqueryQueryHelper,
+    TableInfoItem,
   ],
   exports: [
     OsqueryQueryHelper,

@@ -1,0 +1,42 @@
+.item-header {
+  font-family: Roboto;
+  font-style: normal;
+  font-weight: normal;
+  font-size: 14px;
+  line-height: 28px;
+  /* identical to box height, or 200% */
+
+  letter-spacing: 0.3px;
+
+  /* Grey/900 */
+  color: #202124;
+
+  white-space: normal;
+}
+
+.table-name::after {
+  content: " – ";
+}
+
+.item-content {
+  font-family: Roboto;
+  font-style: normal;
+  font-size: 11px;
+  line-height: 18px;
+  /* or 164% */
+
+  letter-spacing: 0.3px;
+
+  /* Grey/500 */
+
+  color: #9AA0A6;
+}
+
+.columns-content {
+  white-space: normal;
+}
+
+.columns-content::before {
+  content: "Columns: ";
+  font-weight: bold;
+}
