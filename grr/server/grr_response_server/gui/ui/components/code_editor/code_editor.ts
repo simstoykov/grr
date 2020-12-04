@@ -107,9 +107,6 @@ class EditorWithCvaAndMffc extends EditorWithCva
     return uniqueId;
   }
 
-  readonly stateChanges = new Subject<void>();
-  focused = false;
-
   get value(): string {
     return this.editorValue;
   }
@@ -121,17 +118,41 @@ class EditorWithCvaAndMffc extends EditorWithCva
     return this.editorValue === '';
   }
 
+  readonly stateChanges = new Subject<void>();
+  focused = false;
+
+  // not implemented
   shouldLabelFloat = true;
+
+  // not implemented
   required = false;
+
+  // not implemented
   disabled = false;
 
+  // not implemented
   placeholder = '';
+
+  // not implemented
   ngControl: NgControl | null = null;
-  errorState: boolean = false;
-  setDescribedByIds(ids: string[]): void { }
+
+  // not implemented
+  errorState = false;
+
+  /**
+   * Whether the code editor input will be focused when the enclosing
+   * mat-form-field container is clicked
+   */
+  @Input()
+  focusOnContainerClick = true;
   onContainerClick(event: MouseEvent): void {
-    this.editor?.focus();
+    if (this.focusOnContainerClick) {
+      this.editor?.focus();
+    }
   }
+
+  // not implemented
+  setDescribedByIds(ids: string[]): void { }
 
   constructor(
       protected focusMonitor: FocusMonitor,
@@ -148,7 +169,7 @@ class EditorWithCvaAndMffc extends EditorWithCva
         takeUntil(this.unsubscribe$)
       ).subscribe(() => {
         this.stateChanges.next();
-      })
+      });
   }
 
   ngOnDestroy(): void {
@@ -183,7 +204,7 @@ class EditorWithCvaAndMffc extends EditorWithCva
     }
   ],
 })
-export class CodeEditor extends EditorWithCvaAndMffc { 
+export class CodeEditor extends EditorWithCvaAndMffc {
   constructor(
     protected focusMonitor: FocusMonitor,
     protected rootElement: ElementRef<HTMLElement>,

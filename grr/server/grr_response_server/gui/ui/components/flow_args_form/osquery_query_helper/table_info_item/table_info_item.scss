@@ -1,3 +1,11 @@
+.highlight {
+  font-weight: 900;
+}
+
+.item-header, .item-content {
+  white-space: normal;
+}
+
 .item-header {
   font-family: Roboto;
   font-style: normal;
@@ -10,12 +18,6 @@
 
   /* Grey/900 */
   color: #202124;
-
-  white-space: normal;
-}
-
-.table-name::after {
-  content: " – ";
 }
 
 .item-content {
@@ -28,15 +30,18 @@
   letter-spacing: 0.3px;
 
   /* Grey/500 */
-
   color: #9AA0A6;
 }
 
-.columns-content {
-  white-space: normal;
+.table-name::after {
+  content: " – ";
 }
 
 .columns-content::before {
-  content: "Columns: ";
+  content: "Columns:";
   font-weight: bold;
+}
+
+.space-before::before {
+  content: " ";
 }

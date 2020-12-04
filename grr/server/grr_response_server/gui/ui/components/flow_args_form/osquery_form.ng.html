@@ -11,6 +11,18 @@
     </mat-form-field>
   </div>
 
+  <span>
+    <button
+      type="button"
+      *ngIf="!settingsShown"
+      (click)="openSettings()"
+      mat-button
+      color="primary">
+      <mat-icon>keyboard_arrow_down</mat-icon>
+      <span>Show settings</span>
+    </button>
+  </span>
+
   <ng-container *ngIf="settingsShown">
     <mat-form-field class="timeout-form-field">
       <mat-label>Timeout</mat-label>
@@ -20,15 +32,4 @@
 
     <mat-checkbox formControlName="ignoreStderrErrors">Ignore stderr errors</mat-checkbox>
   </ng-container>
-
-  <span>
-    <button
-      type="button"
-      *ngIf="!settingsShown"
-      (click)="openSettings()"
-      mat-button
-      color="primary">
-      <mat-icon>keyboard_arrow_down</mat-icon>Show settings
-    </button>
-  </span>
 </div>

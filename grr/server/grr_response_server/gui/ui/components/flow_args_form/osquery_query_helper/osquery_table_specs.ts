@@ -17,7 +17,14 @@ export interface OsqueryTableSpec {
 export const allTableSpecs: ReadonlyArray<OsqueryTableSpec> = tablesJson;
 
 export function nameToTable(name: string) {
-  return allTableSpecs.filter(tableSpec => tableSpec.name === name)[0];
+  const matches = allTableSpecs.filter(tableSpec => tableSpec.name === name);
+  if (matches.length === 0) {
+    return null;
+  } else if (matches.length === 1) {
+    return matches[0];
+  } else {
+    throw Error(`More than 1 (${matches.length}) tables have name ${name}`);
+  }
 }
 
 export function newOsqueryColumnSpec(
