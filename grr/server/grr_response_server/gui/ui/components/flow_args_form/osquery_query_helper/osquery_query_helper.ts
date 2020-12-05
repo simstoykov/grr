@@ -1,8 +1,8 @@
-import {Component, ViewEncapsulation} from '@angular/core';
+import {Component, ViewEncapsulation, OnDestroy} from '@angular/core';
 import {FormControl} from '@angular/forms';
 
-import {Observable} from 'rxjs';
-import {debounceTime, startWith, map, filter} from 'rxjs/operators';
+import {Observable, of, Subject, BehaviorSubject, ReplaySubject} from 'rxjs';
+import {debounceTime, startWith, map, filter, tap, distinctUntilChanged, takeUntil} from 'rxjs/operators';
 
 import {allTableSpecs, OsqueryTableSpec, nameToTable} from './osquery_table_specs';
 import {isNonNull} from '@app/lib/preconditions';
@@ -80,57 +80,35 @@ class TableCategory {
   }
 }
 
-class ValueWithMatcher {
-  constructor(
-      public value: string,
-      public matcher: SingleElementFuzzyMatcher,
-  ) { }
-
-  static fromValue(value: string): ValueWithMatcher {
-    const matcher = new SingleElementFuzzyMatcher(value);
-    return new ValueWithMatcher(value, matcher);
-  }
+declare interface ValueWithMatcher {
+  readonly value: string;
+  readonly matcher: SingleElementFuzzyMatcher;
 }
 
-export class ValueWithMatchResult {
-  constructor(
-      public value: string,
-      public matchResult: Match | null,
-  ) { }
-}
+class TableSpecWithMatchers {
+  readonly tableNameMatcher: ValueWithMatcher;
+  readonly tableDescriptionMatcher: ValueWithMatcher;
+  readonly columNameMatchers: ReadonlyArray<ValueWithMatcher>;
 
-/** Decorates {@link OsqueryTableSpec} elements with {@link FuzzyMatcher} functionality */
-class TableSpecWithMatchers implements OsqueryTableSpec {
-  tableNameMatcher: ValueWithMatcher;
-  tableDescriptionMatcher: ValueWithMatcher;
-  columNameMatchers: ReadonlyArray<ValueWithMatcher>;
+  constructor(tableSpec: OsqueryTableSpec) {
+    this.tableNameMatcher = {
+      value: tableSpec.name,
+      matcher: new SingleElementFuzzyMatcher(tableSpec.name),
+    };
 
-  // OsqueryTableSpec properties below taken directly from our instance
-  get name() {
-    return this.tableSpec.name;
-  }
-  get description() {
-    return this.tableSpec.description;
-  }
-  get columns() {
-    return this.tableSpec.columns;
-  }
-  get platforms() {
-    return this.tableSpec.platforms;
-  }
-
-  constructor(private tableSpec: OsqueryTableSpec) {
-    this.tableNameMatcher = ValueWithMatcher.fromValue(tableSpec.name);
-    this.tableDescriptionMatcher = ValueWithMatcher.fromValue(
-        tableSpec.description
-    );
+    this.tableDescriptionMatcher = {
+      value: tableSpec.description,
+      matcher: new SingleElementFuzzyMatcher(tableSpec.description),
+    };
 
     this.columNameMatchers = tableSpec.columns.map(
-        column => ValueWithMatcher.fromValue(column.name)
+        column => ({
+          value: column.name,
+          matcher: new SingleElementFuzzyMatcher(column.name),
+        }),
     );
   }
 }
-
 
 class CategoryWithMatchers {
   constructor(
@@ -150,11 +128,14 @@ class CategoryWithMatchers {
   }
 }
 
-class CategoryWithMatchResults {
-  constructor(
-      public name: string,
-      public tablesMatchResults: ReadonlyArray<MatchResultForTable>,
-  ) { }
+declare interface CategoryWithMatchResults {
+  readonly name: string;
+  readonly tablesMatchResults: ReadonlyArray<MatchResultForTable>;
+}
+
+export declare interface ValueWithMatchResult {
+  readonly value: string;
+  readonly matchResult: Match | null;
 }
 
 /** A helper component for the OsqueryForm to aid in writing the query */
@@ -166,18 +147,44 @@ class CategoryWithMatchResults {
   // This makes all styles effectively global.
   encapsulation: ViewEncapsulation.None,
 })
-export class OsqueryQueryHelper {
-  private static readonly INPUT_DEVOUNCE_TIME_MS = 500;
+export class OsqueryQueryHelper implements OnDestroy {
+  private static readonly INPUT_DEVOUNCE_TIME_MS = 50;
+  readonly minCharactersToSearch = 3;
+
+  private readonly unsubscribe$ = new Subject<void>();
 
   queryToReturn?: string;
 
   readonly searchControl = new FormControl('');
 
-  readonly searchValues$ = this.searchControl.valueChanges.pipe(
-    filter(isNonNull),
-    debounceTime(OsqueryQueryHelper.INPUT_DEVOUNCE_TIME_MS),
-    startWith(''),
-  );
+  /**
+   * We use Subject instead of Observable because searchValues$ or derivatives
+   * of it are subscribed to multiple times (e.g. with | async pipes), but we
+   * don't want to create a separate execution for every subscription.
+   */
+  private readonly searchValues$ = new ReplaySubject<string>(1);
+
+  constructor() {
+    this.searchControl.valueChanges.pipe(
+        filter(isNonNull),
+        debounceTime(OsqueryQueryHelper.INPUT_DEVOUNCE_TIME_MS),
+        map(searchValue => {
+          if (searchValue.length < this.minCharactersToSearch) {
+            return '';
+          } else {
+            return searchValue;
+          }
+        }),
+        startWith(''),
+        distinctUntilChanged(),
+
+        takeUntil(this.unsubscribe$),
+    ).subscribe(
+        searchValue => {
+          return this.searchValues$.next(searchValue);
+        }
+    );
+  }
 
   readonly queryToReturn$ = this.searchValues$.pipe(
       map((tableName) => {
@@ -221,21 +228,21 @@ export class OsqueryQueryHelper {
   ): CategoryWithMatchResults {
     const tablesMatchResults = categoryWithMatchers.tableSpecsWithMatchers.map(
         tableWithMatchers => {
-          const nameMatchResult = this.getMatchResult(
+          const nameMatchResult = this.matchValue(
               tableWithMatchers.tableNameMatcher,
               keyword,
           );
-          const descMatchResult = this.getMatchResult(
+          const descriptionMatchResult = this.matchValue(
               tableWithMatchers.tableDescriptionMatcher,
               keyword,
           );
           const columnMatchResults = tableWithMatchers.columNameMatchers.map(
-              columnMatcher => this.getMatchResult(columnMatcher, keyword)
+              columnMatcher => this.matchValue(columnMatcher, keyword)
           );
 
           return this.getMatchResultForTable(
               nameMatchResult,
-              descMatchResult,
+              descriptionMatchResult,
               columnMatchResults,
               keyword !== '',
           );
@@ -243,22 +250,28 @@ export class OsqueryQueryHelper {
             isNonNull
         );
 
-    return new CategoryWithMatchResults(
-        categoryWithMatchers.name,
-        tablesMatchResults,
-    );
+    return {
+      name: categoryWithMatchers.name,
+      tablesMatchResults,
+    };
   }
 
-  private getMatchResult(
+  private matchValue(
       valueWithMatcher: ValueWithMatcher,
       keyword: string,
   ): ValueWithMatchResult {
     if (keyword === '') {
-      return new ValueWithMatchResult(valueWithMatcher.value, null);
+      return {
+        value: valueWithMatcher.value,
+        matchResult: null,
+      };
     }
 
     const matchResult = valueWithMatcher.matcher.matchSingle(keyword);
-    return new ValueWithMatchResult(valueWithMatcher.value, matchResult);
+    return {
+      value: valueWithMatcher.value,
+      matchResult,
+    };
   }
 
   private getMatchResultForTable(
@@ -286,6 +299,11 @@ export class OsqueryQueryHelper {
     };
   }
 
+  ngOnDestroy(): void {
+    this.unsubscribe$.next();
+    this.unsubscribe$.complete();
+  }
+
   trackCategoryWithResultsByName(
       _index: number,
       category: CategoryWithMatchResults,
@@ -298,9 +316,5 @@ export class OsqueryQueryHelper {
       matchResult: MatchResultForTable,
   ): string {
     return matchResult.name.value;
-  }
-
-  trackByIndex(index: number, _element: unknown): number {
-    return index;
   }
 }
