@@ -38,7 +38,6 @@ export class OsqueryForm extends FlowArgumentForm<OsqueryArgs> implements
   @Output() readonly formValues$ = this.form.valueChanges.pipe(shareReplay(1));
   @Output() readonly status$ = this.form.statusChanges.pipe(shareReplay(1));
 
-
   constructor(private readonly dialog: MatDialog) {
     super();
   }
@@ -53,6 +52,12 @@ export class OsqueryForm extends FlowArgumentForm<OsqueryArgs> implements
 
   ngOnInit() {
     this.form.patchValue(this.defaultFlowArgs);
+
+    // Show settings if the flow arguments contain any columns to be collected
+    if (this.defaultFlowArgs.fileCollectColumns &&
+        this.defaultFlowArgs.fileCollectColumns.length > 0) {
+        this.settingsShown = true;
+    }
   }
 
   addFileCollectedColumn(event: MatChipInputEvent): void {

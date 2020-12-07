@@ -22,6 +22,11 @@ from grr_response_server.databases import db
 
 TRUNCATED_ROW_COUNT = 10
 
+FILE_COLLECT_LIMIT_MAX_COLUMNS = 5
+FILE_COLLECT_LIMIT_MAX_ROWS = 1000
+FILE_COLLECT_LIMIT_MAX_SINGLE_FILE_BYTES = 2**29  # 1/2 GiB
+FILE_COLLECT_LIMIT_MAX_TOTAL_BYTES = 2**30  # 1 GiB
+
 
 def _GetTotalRowCount(
     responses: flow_responses.Responses[rdf_osquery.OsqueryResult],) -> int:
@@ -78,6 +83,10 @@ class _ResultNotRelevantError(ValueError):
   pass
 
 
+class _FileCollectionLimitsExceeded(Exception):
+  pass
+
+
 class OsqueryFlow(flow_base.FlowBase):
   """A flow mixin wrapping the osquery client action."""
 
@@ -99,21 +108,39 @@ class OsqueryFlow(flow_base.FlowBase):
       self,
       responses: flow_responses.Responses[rdf_osquery.OsqueryResult],
   ) -> List[rdf_paths.PathSpec]:
-    file_names = []
     columns_for_collection = self.args.file_collect_columns
-
-    print("////////////////// args:", self.args)
-    print("%%%%%%%%%%%%%%%%% Columns for collection:", columns_for_collection)
-
     if len(columns_for_collection) == 0:
       return []
 
+    if len(columns_for_collection) > FILE_COLLECT_LIMIT_MAX_COLUMNS:
+      message = (f"Requested file collection for {len(columns_for_collection)} "
+          f"columns, but the limit is {FILE_COLLECT_LIMIT_MAX_COLUMNS} columns")
+      raise _FileCollectionLimitsExceeded(message)
+
+    total_row_count = _GetTotalRowCount(responses)
+    if total_row_count > FILE_COLLECT_LIMIT_MAX_ROWS:
+      message = (f"Requested file collection on a table with {total_row_count} "
+          f"rows, but the limit is {FILE_COLLECT_LIMIT_MAX_ROWS} rows")
+      raise _FileCollectionLimitsExceeded(message)
+
+    file_names = []
     for osquery_result in responses:
       for column in columns_for_collection:
         file_names.extend(osquery_result.table.Column(column))
 
-    print("***************** files for collection:", file_names)
     return list(map(_PathSpecFromFileName, file_names))
+
+  def _FileCollectionFromColumns(
+      self,
+      responses: flow_responses.Responses[rdf_osquery.OsqueryResult],
+  ) -> None:
+    pathspecs = self._GetPathSpecsToCollect(responses)
+    self.CallFlow(
+        transfer.MultiGetFile.__name__,
+        pathspecs=pathspecs,
+        file_size=FILE_COLLECT_LIMIT_MAX_SINGLE_FILE_BYTES,
+        network_bytes_limit=FILE_COLLECT_LIMIT_MAX_TOTAL_BYTES,
+        next_state=compatibility.GetName(self.ProcessCollectedFiles))
 
   def Start(self):
     super(OsqueryFlow, self).Start()
@@ -141,13 +168,15 @@ class OsqueryFlow(flow_base.FlowBase):
     for response in responses:
       self.SendReply(response)
 
-    # TODO(simstoykov): Perform checks for file count, and maybe modify filesize limit
-    pathspecs = self._GetPathSpecsToCollect(responses)
-    self.CallFlow(
-        transfer.MultiGetFile.__name__,
-        pathspecs=pathspecs,
-        next_state=compatibility.GetName(self.ProcessCollectedFiles))
+    try:
+      self._FileCollectionFromColumns(responses)
+    except _FileCollectionLimitsExceeded as e:
+      raise flow_base.FlowError(str(e))
 
+  def GetProgress(self) -> rdf_osquery.OsqueryProgress:
+    return self.state.progress
+
+  # File collection-related callbacks below
   def ProcessCollectedFiles(
       self,
       responses: flow_responses.Responses[rdf_client_fs.StatEntry],
@@ -178,6 +207,3 @@ class OsqueryFlow(flow_base.FlowBase):
       target_path = f"osquery_collected_files{full_client_path}"
 
       yield flow_base.ClientPathArchiveMapping(client_path, target_path)
-  
-  def GetProgress(self) -> rdf_osquery.OsqueryProgress:
-    return self.state.progress

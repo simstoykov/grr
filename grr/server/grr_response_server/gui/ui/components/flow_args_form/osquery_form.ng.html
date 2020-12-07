@@ -23,22 +23,26 @@
     </button>
   </span>
 
-  <ng-container *ngIf="settingsShown">
-    <mat-form-field class="example-chip-list">
+  <div [class]="settingsShown ? 'settings-container' : 'hide-content'">
+    <mat-form-field>
       <mat-chip-list
         #chipList
         aria-label="Columns for file collection"
         formControlName="fileCollectColumns">
-        <mat-chip *ngFor="let column of fileCollectColumns" [selectable]="false"
-                  [removable]="true" (removed)="removeFileCollectedColumn(column)">
-          {{column}}
+        <mat-chip
+          *ngFor="let columnName of fileCollectColumns"
+          [selectable]="false"
+          [removable]="true"
+          (removed)="removeFileCollectedColumn(column)">
+          {{columnName}}
           <mat-icon matChipRemove>cancel</mat-icon>
         </mat-chip>
-        <input placeholder="Comma-separated list of column names in the result for file collection..."
-                [matChipInputFor]="chipList"
-                [matChipInputSeparatorKeyCodes]="separatorKeysCodes"
-                [matChipInputAddOnBlur]="true"
-                (matChipInputTokenEnd)="addFileCollectedColumn($event)">
+        <input
+          placeholder="Comma-separated list of column names in the result for file collection."
+          [matChipInputFor]="chipList"
+          [matChipInputSeparatorKeyCodes]="separatorKeysCodes"
+          [matChipInputAddOnBlur]="true"
+          (matChipInputTokenEnd)="addFileCollectedColumn($event)">
       </mat-chip-list>
     </mat-form-field>
 
@@ -49,4 +53,4 @@
     </mat-form-field>
 
     <mat-checkbox formControlName="ignoreStderrErrors">Ignore stderr errors</mat-checkbox>
-  </ng-container>
+  </div>

@@ -17,6 +17,16 @@
   <div
     *ngIf="numberOfRowsAvailable$ | async"
     class="flow-details-summary-actions export-button-holder">
+    <ng-container *ngIf="(args$ | async)?.fileCollectColumns as fileCollectColumns">
+      <a
+        *ngIf="collectedFilesLink$ | async as collectedFilesLink"
+        [href]="collectedFilesLink"
+        download
+        mat-stroked-button color="primary">
+        Downlod collected files
+      </a>
+    </ng-container>
+
     <a
       *ngIf="exportCsvLink$ | async as exportCsvLink"
       [href]="exportCsvLink"
@@ -27,9 +37,10 @@
   </div>
 
   <div *ngIf="(args$ | async)?.fileCollectColumns as fileCollectColumns">
-    <span>Columns for file collection:</span>
+    <span>File collected columns:</span>
     <span>{{fileCollectColumns || json}}</span>
   </div>
+
   <osquery-results-table
     *ngIf="displayTable$ | async as displayTable"
     [table]="displayTable">
