@@ -1,13 +1,13 @@
 import {Component, ViewEncapsulation, OnDestroy} from '@angular/core';
 import {FormControl} from '@angular/forms';
 
-import {Observable, of, Subject, BehaviorSubject, ReplaySubject} from 'rxjs';
-import {debounceTime, startWith, map, filter, tap, distinctUntilChanged, takeUntil} from 'rxjs/operators';
+import {Observable, Subject, ReplaySubject} from 'rxjs';
+import {debounceTime, startWith, map, filter, distinctUntilChanged, takeUntil} from 'rxjs/operators';
 
 import {allTableSpecs, OsqueryTableSpec, nameToTable} from './osquery_table_specs';
 import {isNonNull} from '@app/lib/preconditions';
-import { SingleElementFuzzyMatcher, Match } from '@app/lib/fuzzy_matcher';
-import { MatchResultForTable } from './table_info_item/table_info_item';
+import {SingleElementFuzzyMatcher, Match} from '@app/lib/fuzzy_matcher';
+import {MatchResultForTable} from './table_info_item/table_info_item';
 
 /** Provides functionality for composing SQL queries from Osquery table spces */
 export class QueryComposer {
@@ -52,7 +52,7 @@ export class QueryComposer {
  * Data structure which holds a table category name and the Osquery tables specs inside.
  */
 class TableCategory {
-  protected constructor(
+  private constructor(
       public name: string,
       public tableSpecs: ReadonlyArray<OsqueryTableSpec>,
   ) { }
@@ -149,7 +149,7 @@ export declare interface ValueWithMatchResult {
 })
 export class OsqueryQueryHelper implements OnDestroy {
   private static readonly INPUT_DEVOUNCE_TIME_MS = 50;
-  readonly minCharactersToSearch = 3;
+  readonly minCharactersToSearch = 2;
 
   private readonly unsubscribe$ = new Subject<void>();
 

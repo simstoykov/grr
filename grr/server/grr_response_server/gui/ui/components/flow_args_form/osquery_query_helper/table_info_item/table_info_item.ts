@@ -1,7 +1,7 @@
 import {Component, Input} from '@angular/core';
-import {OsqueryTableSpec} from '../osquery_table_specs';
 import {StringWithHighlightsPart, stringWithHighlightsFromMatch} from '@app/lib/fuzzy_matcher';
-import { ValueWithMatchResult } from '../osquery_query_helper';
+import {ValueWithMatchResult} from '../osquery_query_helper';
+
 
 export declare interface MatchResultForTable {
   name: ValueWithMatchResult;
@@ -23,10 +23,6 @@ export class TableInfoItem {
   get docsLinkToTable(): string {
     const tableName = this.tableMatchResult?.name.value;
     return `https://osquery.io/schema/4.5.1/#${tableName}`;
-  }
-
-  allColumnsString(table: OsqueryTableSpec): string {
-    return table.columns.map(column => column.name).join(', ');
   }
 
   convertToHighlightedParts(

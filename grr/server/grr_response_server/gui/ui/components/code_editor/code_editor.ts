@@ -10,7 +10,7 @@ import {
     OnDestroy,
     HostBinding,
 } from '@angular/core';
-import { NG_VALUE_ACCESSOR, ControlValueAccessor, NgControl } from '@angular/forms';
+import {NG_VALUE_ACCESSOR, ControlValueAccessor, NgControl} from '@angular/forms';
 import {MatFormFieldControl} from '@angular/material/form-field';
 import {Subject} from 'rxjs';
 import {FocusMonitor} from '@angular/cdk/a11y';
