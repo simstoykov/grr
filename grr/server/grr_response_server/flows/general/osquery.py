@@ -24,7 +24,7 @@ TRUNCATED_ROW_COUNT = 10
 
 FILE_COLLECT_LIMIT_MAX_COLUMNS = 5
 FILE_COLLECT_LIMIT_MAX_ROWS = 1000
-FILE_COLLECT_LIMIT_MAX_SINGLE_FILE_BYTES = 2**29  # 1/2 GiB
+FILE_COLLECT_LIMIT_MAX_SINGLE_FILE_BYTES = 2**30 // 2  # 1/2 GiB
 FILE_COLLECT_LIMIT_MAX_TOTAL_BYTES = 2**30  # 1 GiB
 
 
@@ -149,8 +149,7 @@ class OsqueryFlow(flow_base.FlowBase):
     action_args = rdf_osquery.OsqueryActionArgs(
         query=self.args.query,
         timeout_millis=self.args.timeout_millis,
-        ignore_stderr_errors=self.args.ignore_stderr_errors,
-    )
+        ignore_stderr_errors=self.args.ignore_stderr_errors)
     self.CallClient(
         server_stubs.Osquery,
         request=action_args,

@@ -17,7 +17,11 @@ from grr_response_client.client_actions import osquery as osquery_action
 from grr_response_core import config
 from grr_response_core.lib.util import temp
 from grr_response_core.lib.util import text
+from grr_response_core.lib.rdfvalues import osquery as rdf_osquery
+from grr_response_core.lib.rdfvalues import client_fs as rdf_client_fs
 from grr_response_server.flows.general import osquery as osquery_flow
+from grr_response_server.databases import db
+from grr_response_server import file_store
 from grr.test_lib import action_mocks
 from grr.test_lib import flow_test_lib
 from grr.test_lib import osquery_test_lib
@@ -155,17 +159,18 @@ class FakeOsqueryFlowTest(flow_test_lib.FlowTestsBaseclass):
     super(FakeOsqueryFlowTest, self).setUp()
     self.client_id = self.SetupClient(0)
 
-  def _InitializeFlow(self, query):
+  def _InitializeFlow(self, query, file_collect_columns=[]):
     session_id = flow_test_lib.TestFlowHelper(
         osquery_flow.OsqueryFlow.__name__,
-        action_mocks.ActionMock(osquery_action.Osquery),
+        action_mocks.OsqueryClientMock(),
         client_id=self.client_id,
         token=self.token,
-        query=query)
+        query=query,
+        file_collect_columns=file_collect_columns)
     return session_id
 
-  def _RunFlow(self, query):
-    session_id = self._InitializeFlow(query)
+  def _RunFlow(self, query, file_collect_columns=[]):
+    session_id = self._InitializeFlow(query, file_collect_columns)
     return flow_test_lib.GetFlowResults(self.client_id, session_id)
 
   def testSuccess(self):
@@ -265,6 +270,68 @@ class FakeOsqueryFlowTest(flow_test_lib.FlowTestsBaseclass):
         progress = flow_test_lib.GetFlowProgress(self.client_id, flow_id)
 
     self.assertEqual(progress.total_row_count, row_count)
+
+  def testFlowDoesntCollectFileAboveSingleLimit(self):
+    target_bytes = 2**20  # 1 MiB
+    temp_file_path = os.path.join(self.temp_dir, "More than 1 MiB.txt")
+
+    phrase = "This is a > 1 MiB file\n"
+    phrase_bytes = len(phrase.encode("utf-8"))
+    repeat_times = target_bytes // phrase_bytes + 1
+    to_write = phrase.encode("utf-8") * repeat_times
+
+    less_than_necessary_bytes = target_bytes - phrase_bytes
+
+    with io.open(temp_file_path, "wb") as fd:
+      fd.write(to_write)
+
+    table = f"""
+    [
+      {{ "collect": "{temp_file_path}" }}
+    ]
+    """
+
+    with mock.patch.object(
+        osquery_flow,
+        "FILE_COLLECT_LIMIT_MAX_SINGLE_FILE_BYTES",
+        less_than_necessary_bytes):
+      with osquery_test_lib.FakeOsqueryiOutput(stdout=table, stderr=""):
+        results = self._RunFlow("Doesn't matter", ["collect"])
+
+    self.assertLen(results, 2)
+    self.assertEqual(type(results[0]), rdf_osquery.OsqueryResult)
+    self.assertEqual(type(results[1]), rdf_client_fs.StatEntry)
+
+    pathspec = results[1].pathspec
+    client_path = db.ClientPath.FromPathSpec(self.client_id, pathspec)
+    fd_rel_db = file_store.OpenFile(client_path)
+    self.assertEqual(to_write, fd_rel_db.read())
+
+  def testFlowCollectFile(self):
+    temp_file_path = os.path.join(self.temp_dir, "More than 1 MiB.txt")
+
+    phrase = "Just sample text to put in the file."
+    with io.open(temp_file_path, "wb") as fd:
+      fd.write(phrase.encode('utf-8'))
+
+    table = f"""
+    [
+      {{ "collect": "{temp_file_path}" }}
+    ]
+    """
+
+    with osquery_test_lib.FakeOsqueryiOutput(stdout=table, stderr=""):
+        results = self._RunFlow("Doesn't matter", ["collect"])
+    
+    self.assertLen(results, 2)
+    self.assertEqual(type(results[0]), rdf_osquery.OsqueryResult)
+    self.assertEqual(type(results[1]), rdf_client_fs.StatEntry)
+
+    pathspec = results[1].pathspec
+    client_path = db.ClientPath.FromPathSpec(self.client_id, pathspec)
+    fd_rel_db = file_store.OpenFile(client_path)
+    file_contents = fd_rel_db.read().decode("utf-8")
+    self.assertEqual(file_contents, phrase)
 
 
 if __name__ == "__main__":

@@ -33,7 +33,7 @@
           *ngFor="let columnName of fileCollectColumns"
           [selectable]="false"
           [removable]="true"
-          (removed)="removeFileCollectedColumn(column)">
+          (removed)="removeFileCollectedColumn(columnName)">
           {{columnName}}
           <mat-icon matChipRemove>cancel</mat-icon>
         </mat-chip>
