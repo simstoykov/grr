@@ -36,10 +36,10 @@
     </a>
   </div>
 
-  <div *ngIf="(args$ | async)?.fileCollectColumns as fileCollectColumns">
+  <!-- <div *ngIf="(args$ | async)?.fileCollectColumns as fileCollectColumns">
     <span>File collected columns:</span>
     <span>{{fileCollectColumns || json}}</span>
-  </div>
+  </div> -->
 
   <osquery-results-table
     *ngIf="displayTable$ | async as displayTable"

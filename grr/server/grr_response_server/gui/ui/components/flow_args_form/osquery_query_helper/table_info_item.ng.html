@@ -17,6 +17,8 @@
       <span
         *ngFor="let part of convertToHighlightedParts(column.name); trackBy: trackByIndex"
         [ngClass]="{'highlight': part.highlight}">{{part.value}}</span>
+      <span
+        *ngIf="column.required">(required)</span>
     </span>
   </span>
 
