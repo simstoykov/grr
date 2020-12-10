@@ -8,6 +8,9 @@ import {OsqueryArgs} from '../../lib/api/api_interfaces';
 import {OsqueryQueryHelper} from './osquery_query_helper/osquery_query_helper';
 import {isNonNull} from '@app/lib/preconditions';
 
+import {MatChipInputEvent} from '@angular/material/chips';
+import {COMMA, ENTER} from '@angular/cdk/keycodes';
+
 
 /** Form that configures an Osquery flow. */
 @Component({
@@ -24,9 +27,15 @@ export class OsqueryForm extends FlowArgumentForm<OsqueryArgs> implements
     query: new FormControl(this.defaultQueryDisplayed, Validators.required),
     timeoutMillis: new FormControl(null, Validators.required),
     ignoreStderrErrors: new FormControl(null),
+    fileCollectColumns: new FormControl([]),
   });
 
   settingsShown = false;
+
+  readonly separatorKeysCodes: number[] = [ENTER, COMMA];
+  get fileCollectColumns() {
+    return this.form.get('fileCollectColumns')?.value as Array<string>;
+  }
 
   @Output() readonly formValues$ = this.form.valueChanges.pipe(shareReplay(1));
   @Output() readonly status$ = this.form.statusChanges.pipe(shareReplay(1));
@@ -45,12 +54,39 @@ export class OsqueryForm extends FlowArgumentForm<OsqueryArgs> implements
     }); // No need to unsubscribe as it completes when the dialog is closed.
   }
 
-  ngOnInit(): void {
-    this.form.patchValue(this.defaultFlowArgs);
-  }
-
   openSettings() {
     this.settingsShown = true;
+  }
+
+  ngOnInit() {
+    this.form.patchValue(this.defaultFlowArgs);
+
+    // Show settings if the flow arguments contain any columns to be collected
+    if (this.defaultFlowArgs.fileCollectColumns &&
+        this.defaultFlowArgs.fileCollectColumns.length > 0) {
+        this.settingsShown = true;
+    }
+  }
+
+  addFileCollectedColumn(event: MatChipInputEvent): void {
+    const inputElement = event.input;
+    const value = event.value ?? '';
+
+    if (value.trim()) {
+      this.fileCollectColumns.push(value.trim());
+    }
+
+    if (inputElement) {
+      inputElement.value = '';
+    }
+  }
+
+  removeFileCollectedColumn(column: string): void {
+    const index = this.fileCollectColumns.indexOf(column);
+
+    if (index >= 0) {
+      this.fileCollectColumns.splice(index, 1);
+    }
   }
 
   private overwriteQuery(newValue: string): void {

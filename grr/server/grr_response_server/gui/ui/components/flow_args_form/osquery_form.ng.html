@@ -23,7 +23,29 @@
     </button>
   </span>
 
-  <ng-container *ngIf="settingsShown">
+  <div [class]="settingsShown ? 'settings-container' : 'hide-content'">
+    <mat-form-field>
+      <mat-chip-list
+        #chipList
+        aria-label="Columns for file collection"
+        formControlName="fileCollectColumns">
+        <mat-chip
+          *ngFor="let columnName of fileCollectColumns"
+          [selectable]="false"
+          [removable]="true"
+          (removed)="removeFileCollectedColumn(columnName)">
+          {{columnName}}
+          <mat-icon matChipRemove>cancel</mat-icon>
+        </mat-chip>
+        <input
+          placeholder="Comma-separated list of column names in the result for file collection."
+          [matChipInputFor]="chipList"
+          [matChipInputSeparatorKeyCodes]="separatorKeysCodes"
+          [matChipInputAddOnBlur]="true"
+          (matChipInputTokenEnd)="addFileCollectedColumn($event)">
+      </mat-chip-list>
+    </mat-form-field>
+
     <mat-form-field class="timeout-form-field">
       <mat-label>Timeout</mat-label>
       <input type="number" matInput placeholder="" formControlName="timeoutMillis">
@@ -31,5 +53,4 @@
     </mat-form-field>
 
     <mat-checkbox formControlName="ignoreStderrErrors">Ignore stderr errors</mat-checkbox>
-  </ng-container>
-</div>
+  </div>

@@ -1,6 +1,10 @@
-.main-container {
+.main-container, .settings-container {
   display: flex;
   flex-direction: column;
+}
+
+.hide-content {
+  display: none;
 }
 
 .query-section {

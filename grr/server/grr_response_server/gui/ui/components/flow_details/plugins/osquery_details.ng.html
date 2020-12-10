@@ -6,13 +6,27 @@
 </div>
 
 <div *ngIf="flowRunning$ | async" class="in-progress">
-  Query in progress: {{ (args$ | async).query }}
+  <div>Query in progress: {{ (args$ | async).query }}</div>
+  <div *ngIf="(args$ | async)?.fileCollectColumns as fileCollectColumns">
+    <span>Columns for file collection:</span>
+    <span>{{fileCollectColumns || json}}</span>
+  </div>
 </div>
 
 <ng-container *ngIf="flowCompleted$ | async">
   <div
     *ngIf="numberOfRowsAvailable$ | async"
     class="flow-details-summary-actions export-button-holder">
+    <ng-container *ngIf="(args$ | async)?.fileCollectColumns as fileCollectColumns">
+      <a
+        *ngIf="collectedFilesLink$ | async as collectedFilesLink"
+        [href]="collectedFilesLink"
+        download
+        mat-stroked-button color="primary">
+        Downlod collected files
+      </a>
+    </ng-container>
+
     <a
       *ngIf="exportCsvLink$ | async as exportCsvLink"
       [href]="exportCsvLink"
@@ -20,6 +34,11 @@
       mat-stroked-button color="primary">
       Download results as CSV
     </a>
+  </div>
+
+  <div *ngIf="(args$ | async)?.fileCollectColumns as fileCollectColumns">
+    <span>File collected columns:</span>
+    <span>{{fileCollectColumns || json}}</span>
   </div>
 
   <osquery-results-table
