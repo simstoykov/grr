@@ -4,7 +4,7 @@ import {FlowArgumentForm} from '@app/components/flow_args_form/form_interface';
 import {shareReplay} from 'rxjs/operators';
 import {MatDialog} from '@angular/material/dialog';
 
-import {OsqueryArgs} from '../../lib/api/api_interfaces';
+import {OsqueryFlowArgs} from '../../lib/api/api_interfaces';
 
 
 /** Form that configures an Osquery flow. */
@@ -14,7 +14,7 @@ import {OsqueryArgs} from '../../lib/api/api_interfaces';
   styleUrls: ['./osquery_form.scss'],
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
-export class OsqueryForm extends FlowArgumentForm<OsqueryArgs> implements
+export class OsqueryForm extends FlowArgumentForm<OsqueryFlowArgs> implements
     OnInit {
   private readonly defaultQueryDisplayed = 'SELECT * FROM users LIMIT 10;';
 
