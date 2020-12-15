@@ -17,7 +17,7 @@ import {FocusMonitor} from '@angular/cdk/a11y';
 import {takeUntil} from 'rxjs/operators';
 import {isNonNull} from '@app/lib/preconditions';
 
-import CodeMirror from 'codemirror';
+import * as CodeMirror from 'codemirror';
 // importing sql-hint is needed for SQL syntax highlighting
 import 'codemirror/addon/hint/sql-hint.js';
 // importing show-hint is needed for the autocomplete pop-up
